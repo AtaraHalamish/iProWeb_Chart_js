@@ -1,0 +1,1633 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Chart.js example</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <script type="text/javascript" src="./p_data/js/jquery-3.7.1.min.js"></script>
+  <script type="text/javascript" src="./p_data/js/thermoline_responsive.js" ></script>
+  <script type="text/javascript" src="./p_data/js/moment_v2.29.4.js"></script>            <!-- http://momentjs.com/ daterangepicker needs it... -->
+  <script type="text/javascript" src="./p_data/js/daterangepicker_v3.1.js"></script>      <!-- http://www.daterangepicker.com -->
+  <link rel="stylesheet" type="text/css" href="./p_data/css/jquery-ui.min.css" />
+  <link rel="stylesheet" type="text/css" href="./p_data/css/daterangepicker_v3.1.css" />
+  <link rel="stylesheet" type="text/css" media="all" href="./p_data/css/style_responsive.css" />
+  <style>
+/* override defaults, to fix IE problem: */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: auto;
+}
+div#content, div#header_main_menu, div#header_logo, div#header_title, div#footer {
+  margin: 0 auto;
+  /* width: 900px; */
+}
+/* override defaults, to fix IE problem. */
+
+/* override bootstrap.css, and other collisions: */
+.container .floated { box-sizing: content-box; }
+div#content div#menu a { box-sizing: content-box; }
+.myFlotChoices input[type="checkbox"] { margin: 3px; }
+div#content button { display: inline; }
+.calendar-table select { display: inline; }
+/* override bootstrap.css, and other collisions. */
+
+div#content div#menu-content.menuLTR { float: right; } /* ??? why is this needed? */
+div#content button {
+  background-color: transparent;
+  border: 2px solid #999;
+  border-radius: 4px;
+  width: 150px; /* 170px */
+}
+div#content button:hover {
+  background-color: #B0C4DE;
+}
+
+.chartContainer {
+  margin: 10px;
+  margin-bottom: 40px;
+  width: 100%; /* 800px; */
+  height: 450px;
+  border: 1px solid #ddd;
+}
+.chartContainer.chartContainerOverview {
+  margin: 10px;
+  margin-left: 50px
+  width: 700px;
+  height: 200px;
+  /* border: 2px solid #ff0000; */
+}
+
+.myWait {
+  cursor: wait;
+}
+
+
+  .myFlotChoices {
+    text-align: left;
+  }
+  .containerRTL .myFlotChoices { /* RTL */
+    text-align: right; 
+    direction: rtl; 
+  }
+
+  .myFlotLegendBullet {
+    border: 1px solid #666;
+    background-color: #cccccc; /* overridden in script. */
+    font-size: 8px;
+    vertical-align: middle;
+  }
+
+  .myFlotLegendLine {
+    display: block;
+    padding-top: 10px;
+  }
+
+  .myFlotLegendLineMin,
+  .myFlotLegendLineMax {
+    display: block;
+    padding-left: 20px;
+  }
+  .containerRTL .myFlotLegendLineMin,
+  .containerRTL .myFlotLegendLineMax { /* RTL */
+    padding-left: 0;
+    padding-right: 20px;
+}
+
+  .myFlotLegendCB {
+    vertical-align: middle; /* middle top*/
+  }
+  .myFlotLegendText {
+    vertical-align: top; /* middle */
+    padding-left: 2px;
+  }
+  .containerRTL .myFlotLegendText { /* RTL */ 
+    padding-left: 0;
+    padding-right: 3px;
+  }
+
+  label .disabled span,
+  .disabled {
+    color: #888888;
+  }
+
+ .myTooltipGenerating {
+    display: none;
+    position: absolute;
+    border: 1px solid #cccccc;
+    padding: 2px;
+    background-color: #ffffcc;
+    opacity: 0.90;
+    font-size: 12px;
+    line-height: normal;
+    text-align: center;
+    border-radius: 3px;
+  }
+  .myTooltipGenerating .s2 { font-weight: bold; }
+
+  #datesAvailable {
+    font-size: 14px;
+    float: right;
+    padding-right: 10px;
+  }
+  .containerRTL #datesAvailable { /* RTL */ 
+    float: left; 
+    padding-left: 10px; 
+    padding-right: 0;
+  }
+
+  #reportRange {
+    cursor: pointer; 
+    padding: 5px 10px; 
+    border: 1px solid #cccccc; 
+    width: 100%; 
+    text-align: center;
+  }
+
+#reportRange > img.myIcon {
+  width: 24px;
+  height: 24px;
+  display: inline;
+  vertical-align: middle;
+} 
+.caret {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 2px;
+  vertical-align: middle;
+  border-top: 6px solid;
+  border-right: 6px solid transparent;
+  border-left: 6px solid transparent;
+}
+ 
+  </style>
+  </head>
+  <body>
+
+<div> Header </div>
+
+  <div class="container floated" id="c_header_logo"></div>
+  <div class="container containerLTR floated" id="c_header_main_menu"></div>
+
+<div id="content">
+  <div class="container containerLTR floated" >
+
+  <!--  put "menu-content" before "menu", usefull for small screen design.  -->
+  <div id="menu-content" class="eleven floated menuLTR" >
+    <h1>Probes History <br class="toShowOnSmallscreen" /><span id="datesAvailable"> - </span></h1>
+
+    <div class="main">
+
+      <div class="date" style="direction: ltr;">
+        <div class="three columns">&nbsp;</div>
+        <div class="five columns" style="direction: ltr;">
+          <div id="reportRange" class="pull-right" >
+            <img class="myIcon" src="./p_data/images/calendar_g64.png" alt="calendar" />
+            &nbsp; <span></span> 
+            <b class="caret"></b>
+          </div>
+        </div>
+        <div class="two columns">&nbsp;</div>
+      </div>
+
+      <div class="clearfix"></div>
+
+      <div id="myChartContainer" class="chartContainer">
+        <canvas id="myChart"></canvas>
+      </div>
+     <p class="toRemoveOnSmallscreen" style="direction:ltr;" >Select range to zoom-in:</p> <!-- LTR -->
+     <!-- <p class="toRemoveOnSmallscreen" style="direction: rtl;" >בחר טווח להגדלת תצוגה:</p> -->  <!-- RTL -->
+      <div class="chartContainer chartContainerOverview">
+        <canvas id="myChartOverview"></canvas>
+      </div>
+
+      <div class="clearfix"></div>
+
+    <div class="control nine columns" style="direction: ltr;">
+      <button id="btnResetZoom">Reset Zoom</button>
+      <button id="btnPrint" class="toRemoveOnSmallscreen" >Print</button>
+      <button id="btnRefresh">Refresh</button> <!-- LTR -->
+      <!-- <button id="btnResetZoom">אתחל תצוגה</button>
+      <button id="btnPrint" class="toRemoveOnSmallscreen" >הדפס</button>
+      <button id="btnRefresh">רענן</button> --> <!-- RTL -->
+   </div>
+
+  </div><!-- "main" -->
+</div><!-- "menu-content" -->
+
+  <div id="menu" class="four floated sidebar left menuLTR" > <!-- style="padding-right: 10px; padding-top: 5px;" -->
+
+    <div class="buttons">
+      <p id="choices" class="myFlotChoices">Show \ Hide:</p> <!-- LTR -->
+      <!-- <p id="choices" class="myFlotChoices">הצג / הסתר:</p> --> <!-- RTL -->
+    </div>
+
+    <div class="buttons">
+     <a href="#" class="btn_first btn_title" ><span class="type1">Download Data:</span></a>
+     <a href="/cgi-bin/getfile.cgi?log=PROBE&what=log&disp=attachment&ext=csv" ><span class="type1">Download Probes</span></a>
+     <a href="/cgi-bin/getfile.cgi?log=ALARM&what=log&disp=attachment&ext=txt" class="btn_last" ><span class="type1">Download Alarms</span></a> <!-- LTR -->
+     <!-- <a href="#" class="btn_first btn_title" ><span class="type1">קבצים להורדה:</span></a>
+     <a href="/cgi-bin/getfile.cgi?log=PROBE&what=log&disp=attachment&ext=csv"                  ><span class="type1">רגשים</span></a>
+     <a href="/cgi-bin/getfile.cgi?log=ALARM&what=log&disp=attachment&ext=txt" class="btn_last" ><span class="type1">אזעקות</span></a> --> <!-- RTL -->
+    </div>
+
+  </div><!-- div id="menu" -->
+
+</div><!-- container -->
+</div><!-- div id="content" -->
+
+  <div class="container floated" id="c_footer"></div>
+
+<div> Footer </div>
+
+<script src="./p_data/js/chart.js"></script>
+<script src="./p_data/js/hammer.min.js"></script> <!-- mobile gestures? -->
+<script src="./p_data/js/chartjs-plugin-zoom.min.js"></script> <!-- https://github.com/chartjs/chartjs-plugin-zoom/releases -->
+<!-- <script src="./p_data/js/chartjs-plugin-annotation.min.js"></script>  https://www.chartjs.org/chartjs-plugin-annotation/latest/guide/ , https://www.npmjs.com/package/chartjs-plugin-annotation?activeTab=versions -->
+<script src="./p_data/js/chartjs-adapter-date-fns.bundle.min.js"></script> <!-- https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js -->
+<script src="./p_data/js/chartjs-plugin-autocolors.js"></script> <!-- https://cdn.jsdelivr.net/npm/chartjs-plugin-autocolors https://github.com/kurkle/chartjs-plugin-autocolors -->
+
+
+<script>
+$(function() {
+
+// -------------------------------------------------------------------------------
+//
+// todo:
+//
+// fool RTL support :
+//   daterangepicker... locale: { ... direction: 'rtl'}
+//   daterangepicker, translate buttons
+//   fdrpGetRanges(), translate ranges
+//   css\js : re-align daterangepicker content
+//
+// use MIN_SAMPLE as zoom parameter? zoom.threshold ? LOGCYCLE_TIME...
+//
+// when displaying some datasets, with different time stamps, might need to adjust zoom selection. (e.g. fuel data files) test09_dates_and_times.html 
+// todo: read data from one file\ read data from few files. log_flow__fuel.html vs. log__fuel.html
+
+// todo:  cfgIsCsvSharedLabels = true; if false, adjust tooltip(*), adjust labels, adjust zoom selection. (*)based on test09_dates_and_times.html 
+//
+// byDay | byMonth | byYear
+//
+// todo on iPro site:
+//   use ajax to read csv file
+//   adjust cfg parameters. cfgIsInitWithoutAdditionalData.
+//   might need to show less x ticks - https://www.chartjs.org/docs/latest/samples/scale-options/ticks.html
+//  overview, might need to reduce data - https://www.chartjs.org/docs/latest/samples/advanced/data-decimation.html
+//
+// Adjusting this file to a specific project: todo ...
+//  Set CSV_FILENAME, PROBES_NUM, MIN_SAMPLE, ...
+//  Set arrPrbNames, arrPrbUnitsInt, all other arrays...
+//  Set all cfg parameters.
+//  Set paramOnce,
+//   updateData(), set isInit = true; in a relevant line.
+//   updateData(), use toDec10() | parseInt() as needed.
+//   fGetObjAxisY(), verify it includes the needed units
+//   toPrbUnit(), toPrbUnitAdditional(), verify it includes the needed units
+//
+// -------------------------------------------------------------------------------
+
+var CSV_FILENAME_FORMAT = "PROBE[N]";  // some csv files. N: 1..PROBES_NUM_FILES
+var PROBES_NUM = 3; // 10; // IPG015: 10 / IPG008: 6  // num of probes (in each data file.)
+var PROBES_NUM_FILES = 3;                   // num of data files.
+var PROBES_NUM_IN_EACH_NFILE = 1;
+var WORDS_IN_DATA_LINE = PROBES_NUM_IN_EACH_NFILE + 2;    // [Time][Date] + probes . . .
+
+var MIN_SAMPLE = 1000 * 60 * 60 * 24 * 1.5; // 1.5 day
+                // 1000 * 60 * 60 * 2;        // 2 hours 
+                // 1000 * 60 * 10;            // 10 minute // 
+                // 1000 * 60 * 60 * 24        // 1 day
+                // 1000 * 60 * 60 * 24 * 1.5; // 1.5 day       
+                // 1000 * logCycle * 2;
+
+var arrPrbNames = ["prb1", "prb2", "prb3", "prb4", "prb5", "prb6", "prb7", "prb8", "prb9"]; // new Array (PROBES_NUM);
+var arrPrbUnitsInt = [9, 9, 9, 1, 4, 0, 1, 1, 4]; // new Array (PROBES_NUM); // 0, 4, 4
+var arrPrbHighLimits = [50, 60, 530]; // new Array (PROBES_NUM);
+var arrPrbLowLimits = [10, 20, 450]; // new Array (PROBES_NUM);
+var arrPrbHighIsShow = [true, false, true]; // new Array (PROBES_NUM);
+var arrPrbLowIsShow = [false, true, false]; // new Array (PROBES_NUM);
+var arrPrbPresent = [true, true, true, true, true, true, true, true, true]; // new Array (PROBES_NUM);
+ 
+const cfgMaxMultyYaxes = 9; // 0..8 
+const cfgIsMultyYaxes = true; // false;
+const cfgIsShowMaxLimits = true; // true;
+const cfgIsShowMinLimits = true; // true;
+const cfgIsShowMinMax = (cfgIsShowMaxLimits || cfgIsShowMinLimits); // true;
+const cfgIsShowOnly1stOnStart = false; // true; // or else, display all probes.   
+const cfgIsCsvSharedLabels = true; // todo: if false, adjust tooltip(*), adjust labels, adjust zoom selection. (*)based on  test09_dates_and_times.html 
+const cfgIsCsvReadFirstDataLine = false; // usually the first line contains only titles.
+const cfgDateRangePickerOpens = 'left';  // LTR: 'left' | RTL: 'right'/'center'
+const cfgIsUseOriginalColors = false; // true;
+const cfgIsInitWithoutAdditionalData = true; // true;
+const cfgIsReadLogCycle = false; // true; // is LOGCYCLE_TIME in paramOnce 
+
+const cfgChartMainType = "bar"; // "line" | "bar" // flot old code:  {barWidth: 60 * 60 * 1000 } + avoid overlapping bars - http://jsfiddle.net/DaG5W/
+const cfgChartOverviewType = "bar"; // "line" | "bar" // flot old code:  {barWidth: 60 * 60 * 1000 } + avoid overlapping bars - http://jsfiddle.net/DaG5W/
+const cfgChartOverviewBarThickness = 5; // 0 - ignore, otherwise - use this param measured in pixels. without this the bar width might be too thin
+
+const cfgIsShowVal0 = true; // true // might be usefull for bar charts, for some charts, use [beginAtZero: true] instead.
+
+const cfgDrpType = "byDay"; // DateRangePicker type "byDay" | "byMonth"
+if (cfgDrpType == "byMonth") { MIN_SAMPLE = 1000 * 60 * 60 * 24 * 2; } // 2 days 
+
+const cfgOptionsTimeFormatTooltip = 'dd-MMM-yyyy HH:mm'; // 'dd-MMM-yyyy HH:mm:ss'; // with/without "ss"
+const cfgOptionsTimeFormatDisplay =  { // https://date-fns.org/v3.3.1/docs/format
+            second: 'HH:mm:ss',
+            minute: 'HH:mm',
+            hour: 'HH:mm',
+            day: 'dd-MMM',
+            month: 'MMM-yyyy',
+            year: 'yyyy'
+          };
+
+var paramOnce = "P_AH|P_AL|P_D|P_P|P_U|Logcycle_TIME"; // "P_TYP|P_T|P_U|P_LBE|P_UBE";
+// unused // var paramOften = "P_V";
+// unused // var timer = 2000 * 3; // 2000;  // 2 seconds
+
+  paramOnce = paramOnce.toUpperCase(); getDataOnce(paramOnce, updateData);
+  // unused // paramOften = paramOften.toUpperCase(); getUpdatedData(paramOften, timer, updateData);
+
+var isInit = false;
+
+// unused // var arrData_Time = [];
+// unused // var arrData_Date = [];
+var arrData_UtcPerProbe = new Array (PROBES_NUM); // var arrData_Utc = [];
+var arrPrbFileProcessed = new Array (PROBES_NUM); 
+var arrUniqueDates = [];
+var arrData_Probes = new Array (PROBES_NUM); 
+
+for(var i = 0; i < PROBES_NUM; i++) { 
+  arrData_Probes[i] = [];
+  arrData_UtcPerProbe[i] = [];
+  arrPrbFileProcessed[i] = false;  
+}
+
+var myChart = null; 
+var myChartOverview = null; 
+
+var selectedX0, selectedXN;
+var selectedDate0 = null, selectedDateN = null;
+var selectedDate0v = null, selectedDateNv = null; // verified values
+
+const autocolors = window['chartjs-plugin-autocolors'];
+Chart.register(autocolors);
+
+const csv_data = `Time,Date,Temp,Rh,Solar,Rain,WindS,ET,WindM,AvgWindD,Dew,WindD
+08:57,08/11/2023,24.4,54.0,448.0,229.4,0.7,2.4,1.2,57.0,14.5,5.5
+09:07,08/11/2023,24.5,51.0,466.0,229.4,1.2,2.4,1.8,355.0,13.7,35.5
+09:17,08/11/2023,24.6,49.0,488.0,229.4,1.0,2.4,2.0,44.0,13.0,5.7
+09:27,08/11/2023,25.1,46.0,506.0,229.4,0.0,2.4,2.1,16.0,12.5,1.6
+09:37,08/11/2023,-25.4,-46.0,-520.0,229.4,0.9,2.4,2.1,25.0,12.7,2.9
+09:47,08/11/2023,25.9,44.0,539.0,229.4,0.0,2.4,1.5,108.0,12.7,10.8
+09:57,08/11/2023,26.7,42.0,547.0,229.4,0.7,2.4,1.7,94.0,12.6,7.3
+10:07,08/11/2023,26.6,42.0,561.0,229.4,1.3,2.4,2.4,106.0,12.6,10.6
+10:17,08/11/2023,27.2,40.0,575.0,229.4,0.0,2.4,2.4,69.0,12.4,3.9
+10:27,08/11/2023,27.6,40.0,585.0,229.4,1.1,2.4,1.6,88.0,12.7,8.8
+10:37,08/11/2023,28.2,38.0,588.0,229.4,0.0,2.4,2.3,75.0,12.5,10.2
+10:47,08/11/2023,28.2,38.0,596.0,229.4,0.5,2.4,1.5,83.0,12.4,8.3
+10:57,08/11/2023,28.3,37.0,602.0,229.4,0.9,2.4,2.1,61.0,12.2,7.8
+11:07,08/11/2023,28.6,36.0,607.0,229.4,0.3,2.4,2.0,108.0,12.0,10.8
+09:27,09/11/2023,25.1,46.0,506.0,229.4,0.0,2.4,2.1,16.0,12.5,1.6
+09:37,09/11/2023,25.4,46.0,520.0,229.4,0.9,2.4,2.1,25.0,12.7,2.9
+09:47,09/11/2023,25.9,44.0,539.0,229.4,0.0,2.4,1.5,108.0,12.7,10.8
+09:57,09/11/2023,-26.7,-42.0,-547.0,229.4,0.7,2.4,1.7,94.0,12.6,7.3
+10:07,09/11/2023,26.6,42.0,561.0,229.4,1.3,2.4,2.4,106.0,12.6,10.6
+10:17,09/11/2023,27.2,40.0,575.0,229.4,0.0,2.4,2.4,69.0,12.4,3.9
+10:27,09/11/2023,27.6,40.0,585.0,229.4,1.1,2.4,1.6,88.0,12.7,8.8
+09:07,10/11/2023,24.5,51.0,466.0,229.4,1.2,2.4,1.8,355.0,13.7,35.5
+09:17,10/11/2023,24.6,49.0,488.0,229.4,1.0,2.4,2.0,44.0,13.0,5.7
+09:27,10/11/2023,-25.1,-46.0,-506.0,229.4,0.0,2.4,2.1,16.0,12.5,1.6
+09:37,10/11/2023,25.4,46.0,520.0,229.4,0.9,2.4,2.1,25.0,12.7,2.9
+
+`; // use ES6 backticks for multi-line string.
+ 
+const csv_data_bar1 = `tank1
+05:18,06/05/2016,4141
+08:00,08/05/2016,3415
+07:53,17/05/2016,2333
+09:24,19/05/2016,1383
+
+`; // use ES6 backticks for multi-line string.
+
+const csv_data_bar2 = `tank2
+06:09,04/05/2016,5116
+17:35,19/05/2016,7976
+16:23,27/05/2016,6048
+07:06,29/05/2016,8384
+
+`; // use ES6 backticks for multi-line string.
+
+const csv_data_bar3 = `tank3
+06:09,07/05/2016,1116
+17:35,08/05/2016,2976
+16:23,13/05/2016,3048
+07:06,15/05/2016,4384
+
+`; // use ES6 backticks for multi-line string.
+
+const csv_data_fuel_flow = `Time,Date,Level (L)
+23:55,15/12/2023,542
+23:55,16/12/2023,773
+23:55,17/12/2023,907
+23:55,18/12/2023,758
+23:55,19/12/2023,781
+23:55,20/12/2023,1130
+23:55,21/12/2023,922
+23:55,22/12/2023,320
+23:55,23/12/2023,892
+23:55,24/12/2023,-2869
+23:55,25/12/2023,966
+23:55,26/12/2023,988
+23:55,27/12/2023,661
+23:55,28/12/2023,535
+23:55,29/12/2023,1174
+23:55,30/12/2023,1189
+23:55,31/12/2023,1471
+23:55,01/01/2024,1486
+23:55,02/01/2024,1271
+23:55,03/01/2024,870
+23:55,04/01/2024,-11579
+23:55,05/01/2024,-21537
+23:55,06/01/2024,610
+23:55,07/01/2024,1047
+23:55,08/01/2024,1071
+23:55,09/01/2024,1108
+23:55,10/01/2024,795
+23:55,11/01/2024,1041
+23:55,12/01/2024,996
+23:55,13/01/2024,543
+23:55,14/01/2024,-8495
+23:55,15/01/2024,-21567
+23:55,16/01/2024,974
+23:55,17/01/2024,1360
+23:55,18/01/2024,1071
+23:55,19/01/2024,974
+23:55,20/01/2024,847
+23:55,21/01/2024,1010
+23:55,22/01/2024,-6756
+23:55,23/01/2024,1018
+23:55,24/01/2024,825
+23:55,25/01/2024,1011
+23:55,26/01/2024,1279
+23:55,27/01/2024,-17160
+23:55,28/01/2024,1286
+23:55,29/01/2024,1033
+23:55,30/01/2024,-4720
+23:55,31/01/2024,1560
+23:55,01/02/2024,1694
+23:55,02/02/2024,1189
+23:55,03/02/2024,1167
+23:55,04/02/2024,1070
+23:55,05/02/2024,892
+
+`; // use ES6 backticks for multi-line string.
+
+const csv_data_fuel_tank = `Time,Date,Level (L)
+07:55,31/08/2022,3983
+19:17,21/09/2022,10760
+13:37,15/10/2022,9294
+08:16,31/10/2022,1437
+15:43,20/12/2022,11242
+07:59,06/03/2023,14195
+09:39,06/03/2023,14202
+17:50,05/04/2023,11768
+15:00,17/04/2023,2
+15:04,17/04/2023,8320
+16:52,17/04/2023,596
+16:54,17/04/2023,-366
+16:57,17/04/2023,7638
+12:17,01/06/2023,7391
+06:10,11/06/2023,8950
+09:34,18/06/2023,8891
+09:42,21/06/2023,8896
+10:20,17/07/2023,8831
+09:44,27/08/2023,8692
+14:12,28/08/2023,8542
+12:35,03/10/2023,8085
+06:08,07/11/2023,17439
+14:18,14/11/2023,17326
+11:42,19/11/2023,17359
+18:24,08/12/2023,15214
+14:02,05/01/2024,17130
+12:56,15/01/2024,15744
+08:32,27/01/2024,11999
+
+`; // use ES6 backticks for multi-line string.
+
+
+function updateData(obj) {
+    var varName, varVal, arrName, jj;
+    var logCycle = 10; // 10s
+
+    for(var i = 0; i < obj.values.length; i++) {
+      varName = obj.values[i].name;
+      varVal = obj.values[i].value;
+      arrName = varName;
+
+      switch (arrName) {
+        case "P_D":  isInit = true; for(var j = 0; j < varVal.length; j++) { arrPrbNames[j] = varVal[j]; } break;
+        case "P_AH": for(var j = 0; j < varVal.length; j++) { arrPrbHighLimits[j] = toDec10(varVal[j]); }
+         // for int values, use  { arr...[j] = parseInt(varVal[j], 10); } 
+         break;
+        case "P_AL": for(var j = 0; j < varVal.length; j++) { arrPrbLowLimits[j] = toDec10(varVal[j]); } 
+         // for int values, use  { arr...[j] = parseInt(varVal[j], 10); } 
+         break;
+        case "P_U":  for(var j = 0; j < varVal.length; j++) { arrPrbUnitsInt[j] = parseInt(varVal[j], 10); } break; 
+        case "P_P":  for(var j = 0; j < varVal.length; j++) { arrPrbPresent[j] = toBool(varVal[j]) } break;
+
+        case "LOGCYCLE_TIME": var j = 0; logCycle = toLogCycle(parseInt(varVal[j], 10));
+
+        // case "P_V": break; // for(var j = 0; j < varVal.length; j++) { jj=j+1; $("#probeValue" + jj).text(toDec10str(varVal[j])); } break;
+
+        default:
+          // dbg // console.log(" * * *  case ??? *" + varName + "* ? ? ? "); // should not get here!
+          break;
+      }  // switch
+    }  // for
+
+    if ( cfgIsReadLogCycle ) {
+       MIN_SAMPLE = 1000 * logCycle * 2; // flot: 1000 * 60 * 10; // 10 minute
+    }
+    if ( isInit ) {
+      fInit();
+      isInit = false;
+    }
+}
+
+function fInit() {
+  // 1 csv file:
+  // fGetCsvDataFile(CSV_FILENAME); // fGetCsvDataFile('log', CSV_FILENAME, 0, -1);
+
+  // N csv files:
+  for(var j = 0; j < PROBES_NUM_FILES; j++) {
+    prbNum = j + 1;
+    CSV_FILENAME = CSV_FILENAME_FORMAT.replace("[N]", prbNum);
+    fGetCsvDataFile(CSV_FILENAME, j); // fGetCsvDataFile('log', CSV_FILENAME, 0, -1, j);
+  }
+}
+
+
+function isAllFilesProcessed() { // N csv files
+  var isOk = true;
+  for(var j = 0; j < PROBES_NUM_FILES; j++) {
+    if (!arrPrbFileProcessed[j]) {
+      isOk = false;
+    }
+  }
+  return isOk;
+}
+
+
+// function fGetCsvDataFile(csvFileName) { // fGetCsvDataFile(urlWhat, urlFile, iStart, iStop){ // 1 csv file
+function fGetCsvDataFile(csvFileName, iPrb) { // fGetCsvDataFile(urlWhat, urlFile, iStart, iStop, iPrb){ // N csv files
+    var myUrl = "/cgi-bin/getfile.cgi?log=" + csvFileName + "&what=log";
+    // dbg // console.log("fGetCsvDataFile:" + myUrl); // dbg //
+
+    $(".chartContainer").addClass("myWait");
+    tooltipGenerating_Show();
+            if (iPrb == 0) {
+              fProcessCsvDataFile(csv_data_bar1, iPrb); // 0, -1 // csv_data_fuel_tank
+            } else if (iPrb == 1) {
+              fProcessCsvDataFile(csv_data_bar2, iPrb); // 0, -1 // csv_data_fuel_tank
+            } else if (iPrb == 2) {
+              fProcessCsvDataFile(csv_data_bar3, iPrb); // 0, -1 // csv_data_fuel_tank
+            }
+            arrPrbFileProcessed[iPrb] = true;
+            // dbg // console.log(arrUniqueDates); // dbg // 
+            // dbg // console.log(arrData_Utc); // dbg // 
+            if (isAllFilesProcessed()) { // N csv files
+              // dbg // console.log(arrUniqueDates); // dbg // 
+              arrUniqueDates.sort(function(a, b) {
+                return a - b; // get a value that is either negative, positive, or zero
+              });
+              // dbg // console.log(arrUniqueDates); // dbg // sorted
+
+              fInitPickerDates(); // fSetPickerDates();
+              fInitChartsData(); // fReadChartsData()
+              fInitCharts();         // initCharts();
+              fSetChartsByPicker();	//fSetChartByPicker();  // Select the last date
+              // console.log("fGetCsvDataFile done." + iPrb); // dbg // sorted
+
+            }
+              $(".chartContainer").removeClass("myWait");
+              tooltipGenerating_Hide();
+
+/*
+    $.ajax({
+        url: myUrl,
+        cache: false,
+        dataType: "text",
+        success: function(data){
+            // dbg // console.log(data); // dbg // 
+            fProcessCsvDataFile(data, iStart, iStop); // 0, -1
+            fSetPickerDates();
+            initCharts();         // draw();
+            fSetChartByPicker();  // Select the last date
+            $(".flot-container").removeClass("myWait"); 
+            tooltipGenerating_Hide();
+       }
+    })
+	*/
+}
+
+
+// function fProcessCsvDataFile(data) {    // 1 csv files
+function fProcessCsvDataFile(data, iPrb){  // N csv files
+  var lines = data.split('\n');
+  var maxLines = lines.length;
+  // dbg // console.log("fProcessCsvDataFile:" + "[maxLines: " + maxLines + ", iPrb:" + iPrb + "]"); // dbg //
+  var iStart = 0;
+  var iMax = maxLines;
+
+  var words;
+  for (var i = iStart; i < iMax; i++) {
+    words = lines[i].split(',');
+    if ((i > 0) && (words.length > 0)) {          // usually, do not read the first 'title' line, and the last 'empty' line.
+      fProcessCsvDataLine(i, words, iPrb);        // N csv files
+    } else if (cfgIsCsvReadFirstDataLine && (i == 0) && (words.length > 0)) {  // do read the first 'title' line as data.
+      // !! // fProcessCsvTitleLine(i, words);    // todo: do read the first line, to get prb names, units, ... 
+      fProcessCsvDataLine(i, words, iPrb);        // N csv files
+    }
+  }
+}
+
+// function fProcessCsvDataLine(iLine, words) {    // 1 csv files
+function fProcessCsvDataLine(iLine, words, iPrb){  // N csv files
+
+  var jMax = words.length;
+
+  if (jMax < WORDS_IN_DATA_LINE) {  // !! do not read the last 'empty' line
+    // dbg // console.log("fProcessCsvDataLine " + iLine + ": jMax-" + jMax + " - last line?");
+    return;
+  }
+
+  // -- Time:
+  var strTime = $.trim(words[0]);
+  if (strTime == "Time") { // and (strDate == "Date") . . . // this is the first titles line.
+    return;
+  }
+
+  var uyyyy, umm, udd, uh, um, us, hh, mm, ss, idx, idx1, idx2;
+
+    idx1 = strTime.indexOf(":", 0);
+    idx2 = strTime.indexOf(":", idx1 + 1);
+    hh = strTime.substring(0, idx1);  uh = hh; if (hh.length < 2) hh = "0" + hh;          // "1:00" -> "01:00"  // "00".."23"
+
+    if (idx2 > -1) {  // "hh:mm:ss"
+      mm = strTime.substring(idx1 + 1, idx2); um = mm; if (mm.length < 2) mm = "0" + mm; // "01:0" -> "01:00"  // "00".."59"
+      ss = strTime.substring(idx2 + 1); us = ss; if (ss.length < 2) ss = "0" + ss;       // "01:0" -> "01:00"  // "00".."59"
+    } else {          // "hh:mm"
+      mm = strTime.substring(idx1 + 1); um = mm; if (mm.length < 2) mm = "0" + mm;       // "01:0" -> "01:00"  // "00".."59"
+      ss = "00"; us = ss; // "00"
+    }
+
+    strTime = hh + ":" + mm + ":" + ss;
+
+
+  // -- Date:  // "dd/mm/yyyy"
+  var strDate = $.trim(words[1]);
+  
+  // dbg // console.log(strDate + ", " + strTime); // dbg //
+
+  // -- Utc:
+  // date fns adapter does not support UTC, so I use local time
+    idx1 = strDate.indexOf("/", 0);
+    idx2 = strDate.indexOf("/", idx1 + 1);
+    // utc: // udd = strDate.substring(0, idx1);         udd = parseInt(udd, 10);      // 1..31
+    // utc: // umm = strDate.substring(idx1 + 1, idx2);  umm = parseInt(umm, 10) - 1;  // 0..11
+    // utc: // uyyyy = strDate.substring(idx2 + 1);      uyyyy = parseInt(uyyyy, 10);  // > 1900
+
+    var idd = strDate.substring(0, idx1);           if (idd.length < 2) idd = "0" + idd;       
+    var imm = strDate.substring(idx1 + 1, idx2);    if (imm.length < 2) imm = "0" + imm;     
+    var iyyyy = strDate.substring(idx2 + 1);        
+
+    // utc: // if ((uh[0] == "0") && (uh.length > 1)) uh = uh.substring(1); uh = parseInt(uh, 10);   // "00".."23" -> 0..23
+    // utc: // if ((um[0] == "0") && (um.length > 1)) um = um.substring(1); um = parseInt(um, 10);   // "00".."59" -> 0..59
+    // utc: // if ((us[0] == "0") && (us.length > 1)) us = us.substring(1); us = parseInt(us, 10);   // "00".."59" -> 0..59
+                                                                     // millisecond: 0..999
+  // dbg // console.log(strDate + ", " + strTime + ", " + uyyyy + ", " + umm + ", " + udd); // dbg //
+  // dbg // console.log(strDate + ", " + strTime + ", " + uh + ", " + um + ", " + us); // dbg //
+
+  // utc: // arrData_Utc.push(Date.UTC(uyyyy, umm, udd, uh, um, us));
+
+  // Note: ISO 8601 date format is "yyyy-mm-dd hh:mm:ss" e.g. "2020-02-08 09:30:26"
+  // chart.js-adapter-date-fns default data format is the same.
+  // so I need to parse any given date to this format.
+  // based on https://www.youtube.com/watch?v=yRfD0RQjEss - How to Use Different Date Formats in Chart.js 
+  // logDatesParsed.push(strDate.split("/").reverse().join("-")); // d1d/m2m/yy3yy => yy3yy-m2m-d1d 
+  
+  var strIso8601d = iyyyy + "-" + imm + "-" + idd;
+  var strIso8601dt = iyyyy + "-" + imm + "-" + idd + "T" + strTime;
+
+  // 1 csv file:
+  // arrData_Utc.push(new Date(strIso8601dt)); // use ISO 8601 format. e.g. "2020-02-08 09:30:26"
+
+  // N csv files:
+  arrData_UtcPerProbe[iPrb].push(new Date(strIso8601dt));
+
+  // -- Probes:
+  var valPrb;
+  // 1 csv file:
+  // for (var i = 0; i < PROBES_NUM; i++) {
+  //   valPrb = parseFloat($.trim(words[2 + i]));  arrData_Probes[i].push(valPrb);  // float values.
+  //   // valPrb = parseInt($.trim(words[2 + i]), 10);  arrData_Probes[i].push(valPrb);  // int values.
+  //   // valPrb = parseInt($.trim(words[2 + i]), 10) / 10;  arrData_Probes[i].push(valPrb);  // int * 10 values.
+  // }
+
+  // N csv files, but only one value in a line:
+  valPrb = parseFloat($.trim(words[2]));  arrData_Probes[iPrb].push(valPrb);  // float values.
+
+  // -- arrUniqueDates:
+  var yymmdd = new Date(strIso8601d); // Date.UTC(uyyyy, umm, udd); // new Date(uyyyy, umm, udd);
+  
+  // inArray() does not work for dates. Use getTime() instead 
+  var isInArray = false;   // https://stackoverflow.com/questions/17067296/checking-if-date-belongs-to-array-of-dates
+  for (var i=0; i < arrUniqueDates.length; i++) {
+    if (arrUniqueDates[i].getTime() == yymmdd.getTime()) {
+        isInArray = true;
+        break;
+    }
+  }
+  if (!isInArray) {    
+    arrUniqueDates.push(yymmdd);
+    // dbg // console.log("fProcessCsvDataLine arrUniqueDates add " + strDate);
+  }
+
+}
+
+
+  // - - - - - - - - - - - - - - - - - - - 
+  //    dateRangePicker:
+  // - - - - - - - - - - - - - - - - - - - 
+
+    function fSetReportRange(start, end) {	
+
+    var dFormat = 'D-MMM-YYYY'; // default, byDay
+    // if (cfgDrpType == "byMonth") dFormat = 'MMM-YYYY'; 
+
+      if (moment(start).isSame(end, 'day')) { // (start == end) {
+        $('#reportRange span').html(moment(start).format(dFormat));
+      } else {
+        $('#reportRange span').html(moment(start).format(dFormat) + '..' + moment(end).format(dFormat));
+      }
+    }
+
+    function rangeCallBack(start, end) {
+      // dbg // console.log("rangeCallBack() " + start + " .. " + end); // dbg // 
+      fSetChartsByPicker(); // fSetChartByPicker();
+      fSetReportRange(start, end);
+    }
+
+
+function fdrpGetRanges() {
+
+  var r = {};
+  if (cfgDrpType == "byDay" ) {
+    r['Today'] = [moment(), moment()];
+    r['Yesterday'] = [moment().subtract(1, 'days'), moment().subtract(1, 'days')];
+    r['Last 7 Days'] = [moment().subtract(6, 'days'), moment()];
+    r['Last 30 Days'] = [moment().subtract(29, 'days'), moment()];
+    r['This Month'] = [moment().startOf('month'), moment()];
+    r['Last Month'] = [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')];
+  } else if (cfgDrpType == "byMonth" ) {
+    r['This Month'] = [moment().startOf('month'), moment()];
+    r['Last Month'] = [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')];
+  }
+  return r;
+}
+
+    $('#reportRange').daterangepicker({
+      ranges: fdrpGetRanges(), /* {
+           'Today': [moment(), moment()],
+           'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+           'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+           'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+           'This Month': [moment().startOf('month'), moment()],
+           'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+        }, */ 
+        "showDropdowns": true,
+        "alwaysShowCalendars": true,
+        "opens": cfgDateRangePickerOpens,  // 'left' | 'right' | 'center'
+        // "singleDatePicker": (cfgDrpType == "byMonth"),
+        locale: { format: 'D-MMM-YYYY' }
+    }, rangeCallBack);
+
+
+    function rangeSetInnerSelectedRange(start, end, isSetChart) {
+      $('#reportRange').data('daterangepicker').setStartDate(start);
+      $('#reportRange').data('daterangepicker').setEndDate(end);
+      var rangeStart = $('#reportRange').data('daterangepicker').startDate;
+      var rangeEnd = $('#reportRange').data('daterangepicker').endDate;
+      // rangeCallBack(rangeStart, rangeEnd); // calculateChosenLabel() is probably already called
+      if (isSetChart) {
+        fSetChartsByPicker(); // fSetChartByPicker();
+      }
+      fSetReportRange(start, end);
+    }
+
+    function rangeSetOuterAvailableRange(start, end) {
+      $('#reportRange').data('daterangepicker').minDate = moment(start); 
+      $('#reportRange').data('daterangepicker').maxDate = moment(end); 
+    }
+
+function fInitPickerDates() { // fSetPickerDates
+
+  if (arrUniqueDates.length > 0) {
+
+    var iMax = arrUniqueDates.length - 1;
+    var i0 = 0;
+
+    var d0 = arrUniqueDates[i0]; 
+    var dN = arrUniqueDates[iMax]; 
+
+    var dFormat = 'D-MMM-YYYY'; // default, byDay
+    // if (cfgDrpType == "byMonth") { dFormat = 'MMM-YYYY'; }
+
+    // 1. Update available dates:   
+    var strHtml = "";                   // Set the text of "#datesAvailable":
+    if (moment(d0).isSame(dN, 'day')) { // (start == end) {
+      strHtml = " [ " + moment(d0).format(dFormat) + " ]";
+    } else {
+      strHtml = " [ " + moment(d0).format(dFormat) + ".." + moment(dN).format(dFormat) + " ]";
+    }
+    $("#datesAvailable").html(strHtml);
+
+    rangeSetOuterAvailableRange(d0, dN); 
+
+    // 2. Select last day without updating the charts:
+    isSetChart = false;
+    var d00 = dN; // default, byDay
+    var dNN = dN; // default, byDay
+    if (cfgDrpType == "byMonth") { // Select last month
+      dNN = new Date(dN);            // save the last date
+      d00 = new Date(dN.setDate(1)); // Set to the 1st day of the month 
+    } 
+    rangeSetInnerSelectedRange(d00, dNN, isSetChart);
+
+  }
+}
+
+
+  // - - - - - - - - - - - - - - - - - - - 
+  //    tooltipGenerating:
+  // - - - - - - - - - - - - - - - - - - - 
+
+  $("<div id='myTooltipGenerating' class='myTooltipGenerating'></div>").appendTo("body");
+
+  function tooltipGenerating_Hide() {
+    $("#myTooltipGenerating").hide();
+  }
+  function tooltipGenerating_Show() {
+    $("#myTooltipGenerating").html("<span class='s1'>" + "Generating data . . . " + "</span>" + "<br />" + "<span class='s2'>" + "Please wait" + "</span>" + "<br />" + "<img src='./p_data/images/updating.gif' alt='Updating...' ></img>")
+      .offset({
+        "top": $("#myChartContainer").offset().top + 5,
+        "left": $("#myChartContainer").offset().left + 5
+      })
+      .fadeIn(200);
+  }
+
+
+  // - - - - - - - - - - - - - - - - - - - 
+  //    charts:
+  // - - - - - - - - - - - - - - - - - - - 
+
+
+function fInitChartsData() { // fReadChartsData() // old flot code, function dataSetAddProbes()
+
+  if (cfgIsCsvSharedLabels) {
+    // 1 csv file:
+    // configMain.data.labels = arrData_Utc; 
+    // configOverview.data.labels = arrData_Utc; 
+    
+    // N csv files:
+    configMain.data.labels = arrUniqueDates; 
+    configOverview.data.labels = arrUniqueDates; 
+  } else {
+    // todo.....
+  }
+  
+  var dataAxesArr = [];
+
+  for(var i = 0; i < PROBES_NUM; i++) {
+    if (arrPrbPresent[i]) {
+
+/* 
+        if (!cfgIsCsvSharedLabels) need to use data pairs, as in flot old code:
+        var data = [];
+        for(var j = 0; j < arrData_Utc.length; j++) {      // build current data array
+          var keyPair = [arrData_Utc[j], arrData_Probes[i][j]];
+          data.push(keyPair);
+        }
+        dataObj.data = data;
+*/
+
+        // N csv files:
+        var data = [], keyPair;
+        for(var j = 0; j < arrData_UtcPerProbe[i].length; j++) {      // build current data array
+          // keyPair = [arrData_UtcPerProbe[i][j], arrData_Probes[i][j]];
+          keyPair = {x: arrData_UtcPerProbe[i][j], y: arrData_Probes[i][j]};
+          data.push(keyPair);
+        }
+
+        dataObj = {};
+        dataObj.iPrb = i;
+        dataObj.label = arrPrbNames[i];
+        // dataObj.data = arrData_Probes[i]; // 1 csv file
+        dataObj.data = data;                 // N csv files
+        dataObj.yAxisID = 'yAxis_' + arrPrbUnitsInt[i];
+        dataObj.hidden = true; // on start, all is hidden
+		
+		dataAxesArr.push(dataObj.yAxisID);
+
+		// dbg // console.log(dataObj); // dbg // 
+		console.log(JSON.stringify(dataObj.data)); // dbg // 
+
+        configMain.data.datasets.push(dataObj);                                 // will be filtered later...
+        configOverview.data.datasets.push(JSON.parse(JSON.stringify(dataObj))); // must use dataObj.clone
+		// https://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript
+	}
+  }  // for
+  const dataAxes = new Set(dataAxesArr); // unique values
+  dataAxes.forEach (function(value) {
+    // dbg // console.log("dataAxes.forEach " + value); // dbg //
+    configMain.options.scales[value] = fGetObjAxisY(value, false); // true; // on start, all is hidden
+    configOverview.options.scales[value] = fGetObjAxisY(value, false);
+  })
+}
+
+function dataSetAddProbesMin() {
+  // 1 csv file:
+  // var t0 = arrData_Utc[0];
+  // var tN = arrData_Utc[arrData_Utc.length - 1];
+
+  // N csv files:
+  var t0, tN, l;
+
+  for(var i = 0; i < PROBES_NUM; i++) {
+    if (arrPrbPresent[i]) {
+
+        l = arrData_UtcPerProbe[i].length
+        t0 = arrData_UtcPerProbe[i][0];
+        tN = arrData_UtcPerProbe[i][l - 1];
+
+        var data = [{x: t0, y: arrPrbLowLimits[i]}, {x: tN, y: arrPrbLowLimits[i]}];
+
+        dataObj = {};
+        dataObj.iPrb = i;
+        dataObj.label = arrPrbNames[i] + " (min)";
+        dataObj.data = data; 
+        dataObj.yAxisID = 'yAxis_' + arrPrbUnitsInt[i];
+        dataObj.hidden = true; // on start, all is hidden
+
+        dataObj.borderColor = configMain.data.datasets[i].borderColor;
+        dataObj.backgroundColor = configMain.data.datasets[i].backgroundColor; // different alpha value
+        dataObj.borderDash = [10, 4 + i]; // different dash for overlapping lines
+        dataObj.pointStyle = false;
+
+        configMain.data.datasets.push(dataObj); // will be filtered later...
+        configOverview.data.datasets.push(JSON.parse(JSON.stringify(dataObj))); // must use dataObj.clone
+
+    } // if (arrPrbPresent[i])
+  } // for
+}
+
+function dataSetAddProbesMax() {
+  // 1 csv file:
+  // var t0 = arrData_Utc[0];
+  // var tN = arrData_Utc[arrData_Utc.length - 1];
+
+  // N csv files:
+  var t0, tN, l;
+
+  for(var i = 0; i < PROBES_NUM; i++) {
+    if (arrPrbPresent[i]) {
+
+        l = arrData_UtcPerProbe[i].length
+        t0 = arrData_UtcPerProbe[i][0];
+        tN = arrData_UtcPerProbe[i][l - 1];
+
+        var data = [{x: t0, y: arrPrbHighLimits[i]}, {x: tN, y: arrPrbHighLimits[i]}];
+
+        dataObj = {};
+        dataObj.iPrb = i;
+        dataObj.label = arrPrbNames[i] + " (max)";
+        dataObj.data = data; 
+        dataObj.yAxisID = 'yAxis_' + arrPrbUnitsInt[i];
+        dataObj.hidden = true; // on start, all is hidden
+
+        dataObj.borderColor = configMain.data.datasets[i].borderColor;
+        dataObj.backgroundColor = configMain.data.datasets[i].backgroundColor; // different alpha value
+        dataObj.borderDash = [10, 4 + i]; // different dash for overlapping lines
+        dataObj.pointStyle = false;
+
+        configMain.data.datasets.push(dataObj); // will be filtered later...
+        configOverview.data.datasets.push(JSON.parse(JSON.stringify(dataObj))); // must use dataObj.clone
+
+    } // if (arrPrbPresent[i])
+  } // for
+}
+
+
+function fInitCharts() {   //initCharts();
+
+  myChart = new Chart('myChart', configMain);
+  myChartOverview = new Chart('myChartOverview', configOverview);
+
+  // dataSetAddProbes(); // similar to fInitChartsData
+  fInitLegend();
+  if (cfgIsShowMinMax) { // add all to keep index structure
+    dataSetAddProbesMin();
+    dataSetAddProbesMax();
+  }
+
+  if (cfgChartOverviewType == "bar") {
+    if (cfgChartOverviewBarThickness > 0) {
+      myChartOverview.config.options.barThickness = cfgChartOverviewBarThickness; // in pixels
+    }
+  }
+
+  plotAccordingToChoices();
+  fInitLegendColors(); // initLegendColors();
+
+}
+
+
+  // - - - - - - - - - - - - - - - - - - - 
+  //    legend:
+  // - - - - - - - - - - - - - - - - - - - 
+
+  function getLegendLine(iLegend, key, label, isChecked, isDisabled, lClass) {
+
+    if (isDisabled) {
+      lClass += " disabled";
+    }
+
+    var html = "" +
+      "<label for='id" + key + "'>" +
+      "<span class='" + lClass + "'>" +
+      "<input type='checkbox' class='myFlotLegendCB' "; // name='" + key + "'";
+
+    if (isChecked) {
+      html += " checked='checked' ";
+    }
+
+    if (isDisabled) {
+      html += " disabled='disabled' ";
+    }
+
+    html += "" +
+      " id='chk_" + key + "'></input>" +
+
+      "<span id='legend" + iLegend + "' class='myFlotLegendBullet'>&nbsp;&nbsp;&nbsp;</span>" +
+      "<span class='myFlotLegendText'>" + label + "</span>" +
+      "</span>" +
+      "</label>";
+
+    return html;
+  }
+
+
+function toPrbUnitAdditional(pVal) {
+  // [0=C,1=F,2=bar,3=psi,4=%,5=ppm,6=us/cm,7=ms/cm,8=pH)
+  switch (pVal){
+    case 9 : return "L"; break;
+    default : return "unit???"; break;  // should not get here!
+  }
+}
+
+  function fInitLegend() { // initLegend()
+
+    var choiceContainer = $("#choices");
+
+    var iLegend = 0;
+    var isChecked = true;
+    var isDisabled;
+    const datasets = configMain.data.datasets;
+    $.each(datasets, function(key, val) {
+      isDisabled = (arrData_Probes[val.iPrb].length == 0);
+      choiceContainer.append(getLegendLine(iLegend, key, val.label, isChecked, isDisabled, "myFlotLegendLine") +
+      "<span id='legend" + iLegend + "_minPlaceHolder'>" + "</span>" +
+      "<span id='legend" + iLegend + "_maxPlaceHolder'>" + "</span>");
+      iLegend++;
+      if (cfgIsShowOnly1stOnStart) {
+        isChecked = false; // check only the first item
+      }
+    });
+
+  if (cfgIsShowMinMax) {
+    iLegend = 0;
+    isChecked = false; 
+    isDisabled = false; 
+    var iPrb, prbUnitsStr; // might not be the same as iLegend.
+    $.each(datasets, function(key, val) {
+      iPrb = val.iPrb; 
+      prbUnitsStr = toPrbUnit(arrPrbUnitsInt[iPrb]);
+      if (prbUnitsStr == "unit???") { prbUnitsStr = toPrbUnitAdditional(arrPrbUnitsInt[iPrb]); }
+      if (cfgIsShowMinLimits && arrPrbLowIsShow[iPrb]) {
+        $( getLegendLine(iLegend + "_min", key + "_min", "min: " + arrPrbLowLimits[iPrb] + prbUnitsStr, isChecked, isDisabled, "myFlotLegendLineMin toRemoveOnSmallscreen")).insertAfter( "#legend" + iLegend + "_minPlaceHolder" );
+      }
+      if (cfgIsShowMaxLimits && arrPrbHighIsShow[iPrb]) {
+        $( getLegendLine(iLegend + "_max", key + "_max", "max: " + arrPrbHighLimits[iPrb] + prbUnitsStr, isChecked, isDisabled, "myFlotLegendLineMax toRemoveOnSmallscreen")).insertAfter( "#legend" + iLegend + "_maxPlaceHolder" );
+      }
+      iLegend++;
+    });
+  }
+
+    $('.myFlotLegendCB').click(plotAccordingToChoices); // plotAccordingToChoices
+  }
+
+
+function fInitLegendColors() { // initLegendColors()
+  var c1, c2;
+  for (i = 0; i < PROBES_NUM; i++) { // Read chart colors:
+    c1 = myChart.config.data.datasets[i].borderColor;
+    c2 = myChart.config.data.datasets[i].backgroundColor; // different alpha value
+	// dbg // console.log(i + ", " + c1 + ", " + c2);
+      $("#legend" + i).css("background-color", c2);
+      $("#legend" + i + "_min").css("background-color", c2);
+      $("#legend" + i + "_max").css("background-color", c2);
+  }
+}
+
+
+function plotAccordingToChoices() {
+  var i, yId, cbId, idx;
+  var arrIsShowPrb = new Array (PROBES_NUM);
+  var arrIsShowPrbMin = new Array (PROBES_NUM);
+  var arrIsShowPrbMax = new Array (PROBES_NUM);
+  var isAllHidden = true;
+  
+  var dataAxesArr = [];
+  let sc = myChart.config.options.scales || null;
+
+  for (i = 0; i < PROBES_NUM; i++) { 
+    arrIsShowPrb[i] = false; 
+    arrIsShowPrbMin[i] = false; 
+    arrIsShowPrbMax[i] = false; 
+  }
+
+    var choiceContainer = $("#choices");
+    choiceContainer.find("input:checked").each(function () {
+      cbId = $(this).attr("id"); 
+      cbId = cbId.substring(4);  // "chk_N" => "N", "chk_N_min" => "N_min"
+      // dbg // console.log(cbId); // dbg // 
+      idx = cbId.indexOf("_", 0);
+      if (idx == -1) { // "chk_N"
+        arrIsShowPrb[cbId] = true; 
+        isAllHidden = false;
+        dataAxesArr.push(myChart.config.data.datasets[cbId].yAxisID);
+      } else if (cbId.substring(idx + 1) == "min") {
+        cbId = cbId.substring(0, idx); // == iPrb
+        arrIsShowPrbMin[cbId] = true; 
+        dataAxesArr.push(myChart.config.data.datasets[cbId].yAxisID);        
+      } else if (cbId.substring(idx + 1) == "max") {
+        cbId = cbId.substring(0, idx); // == iPrb
+        arrIsShowPrbMax[cbId] = true; 
+        dataAxesArr.push(myChart.config.data.datasets[cbId].yAxisID);        
+      }
+    });
+
+    if (isAllHidden) { // force 1st selection
+      cbId = 0; 
+      arrIsShowPrb[cbId] = true; 
+      dataAxesArr.push(myChart.config.data.datasets[cbId].yAxisID);
+      $("#chk_" + cbId).prop("checked", true);
+    }
+  // dbg // console.log(arrIsShowPrb);
+  // dbg // console.log(dataAxesArr);
+
+  var i_min, i_max;
+  for (i = 0; i < PROBES_NUM; i++) {
+
+    myChart.config.data.datasets[i].hidden = !(arrIsShowPrb[i]);
+    myChartOverview.config.data.datasets[i].hidden = !(arrIsShowPrb[i]);
+
+    if (cfgIsShowMinMax) { 
+      i_min = i + PROBES_NUM;	
+      i_max = i + PROBES_NUM + PROBES_NUM;
+      myChart.config.data.datasets[i_min].hidden = !(arrIsShowPrbMin[i]);
+      myChart.config.data.datasets[i_max].hidden = !(arrIsShowPrbMax[i]);
+      myChartOverview.config.data.datasets[i_min].hidden = !(arrIsShowPrbMin[i]);
+      myChartOverview.config.data.datasets[i_max].hidden = !(arrIsShowPrbMax[i]);
+    }
+  }
+
+  const dataAxes = new Set(dataAxesArr); // unique values
+  // dbg // console.log(dataAxes);
+  if (sc) {
+    for (i = 0; i < (cfgMaxMultyYaxes + 1); i++) { 
+      yId = 'yAxis_' + i;
+      if (sc[yId])
+        sc[yId].display = dataAxes.has(yId);
+    }
+  }
+	  	
+    myChart.update();
+    myChartOverview.update();
+}
+
+
+const drawPrbVal0 = {
+  id: 'drawPrbVal0',
+  beforeDraw(chart, args, options) {
+    if (cfgIsShowVal0) {
+      const {ctx, chartArea: {left, top, width, height}} = chart;
+
+      const datasets = chart.config.data.datasets; // configMain.data.datasets;
+      var iPrb, yScale, yPixelVal0;
+      $.each(datasets, function(key, val) {
+        iPrb = val.iPrb;
+        yScale = chart.scales[val.yAxisID];
+   
+        if (yScale) {
+          yPixelVal0 = yScale.getPixelForValue(0);
+          // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/stroke
+          // todo? add rotated text - https://stackoverflow.com/questions/62323790/chartjs-two-titles-for-positive-and-negative-part-of-y-axis
+          ctx.save();
+          ctx.beginPath();
+          ctx.strokeStyle = val.backgroundColor; // 'rgba(255, 0, 0, 0.2)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([10, 4 + iPrb]); // different dash for overlapping lines
+          // if (isDraw) {
+            ctx.moveTo(left, yPixelVal0);
+            ctx.lineTo(left + width, yPixelVal0);
+          // }
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.restore();
+        } // if (yScale)
+
+      }); // $.each
+      	  
+    } // if (cfgIsShowMinMax)
+  }
+};
+
+
+const drawSelectedRange = {
+  id: 'drawSelectedRange',
+  beforeDraw(chart, args, options) {
+   if (selectedDate0v && selectedDateNv) {
+      // dbg // console.log("drawSelectedRange ! " + selectedDate0v + " .. " + selectedDateNv); // dbg // 
+      const {ctx, chartArea: {left, top, width, height}} = chart;
+      const xScale = chart.scales["x"]; 
+      var xValMin = selectedDate0v, xPixelMin = xScale.getPixelForValue(xValMin);
+      var xValMax = selectedDateNv, xPixelMax = xScale.getPixelForValue(xValMax);
+      // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/stroke
+      ctx.save();
+      ctx.fillStyle = 'rgba(240, 240, 60, 0.5)'; // yellow
+      ctx.fillRect(xPixelMin, top, xPixelMax - xPixelMin, height); // x, y, width, height
+      ctx.restore();
+   } else {
+      // console.log("drawSelectedRange ? " + selectedDate0 + " .. " + selectedDateNv); // dbg // 
+   } // if (selectedDate0v && selectedDateNv)
+  }
+};
+
+
+function fGetObjAxisY(yUnitID, isDisplay) {
+  const isShowGrid = !cfgIsMultyYaxes; // multy y-axis, hide grid
+  var strUnits = "";
+  var isBeginAt0 = false;
+
+  switch(yUnitID) {
+    case 'yAxis_0': strUnits = String.fromCharCode(176) + "C"; break; 
+    case 'yAxis_1': strUnits = String.fromCharCode(176) + "F"; break; 
+    case 'yAxis_2': strUnits = "bar"; break; 
+    case 'yAxis_3': strUnits = "psi"; break; 
+    case 'yAxis_4': strUnits = "%"; isBeginAt0 = true; break; 
+    case 'yAxis_5': strUnits = "ppm"; break; 
+    case 'yAxis_6': strUnits = "us/cm"; break; 
+    case 'yAxis_7': strUnits = "ms/cm"; break; 
+    case 'yAxis_8': strUnits = "pH"; break; 
+    case 'yAxis_9': strUnits = "L"; isBeginAt0 = true; break; // also added to function toPrbUnitAdditional()
+    default: strUnits = "uu"; // break;
+  }
+
+  var y = {
+    myUnits: strUnits,
+    beginAtZero: isBeginAt0,
+    type: 'linear',
+    display: isDisplay,
+    position: 'left',  // `axis` is determined by the position as 'y'
+    grid: { drawOnChartArea: isShowGrid }, 
+    ticks: { callback: function(value, index, ticks) { 
+	 // const chart = this.chart;
+	 // const yScale = chart.scales[this.id];
+	 return value + strUnits; 
+	}}
+  };
+  return y;
+}
+
+
+const optionsMain = {
+  maintainAspectRatio: false,
+  scales: {
+    x: {
+      type: "time",
+        time: { 
+          // unit: "hour", // "day" // auto selected 
+          // parser: "dd/mm/yyyy",  // use iso format instead. // https://www.chartjs.org/docs/latest/axes/cartesian/time.html#parser
+          tooltipFormat: cfgOptionsTimeFormatTooltip, 
+          displayFormats: cfgOptionsTimeFormatDisplay 
+        },
+        ticks: {
+          autoSkip: true,
+          // source: "labels", // auto selected 
+          major: { enabled: true }, // show "my" labels as major ticks
+          font: (context) => { 
+            const w = (context.tick && context.tick.major) ? "bold" : ""; // consider the first null values
+            return {weight: w};
+          },
+       } 
+    },
+    y: {
+      display: false,
+      beginAtZero: true		  
+    } 
+	// yAxes are added by data...
+  },
+  plugins: {
+    autocolors: { enabled: !cfgIsUseOriginalColors },
+    legend: { display: false }, 
+    tooltip: { 
+      // mode: 'index', // 1 csv file  // all items at the same index
+      mode: 'x',        // N csv files // all items intersect the position.X coordinate  
+      intersect: false,
+      callbacks: { label: function(context) { // show all datasets in one tooltip.
+          let label = context.dataset.label || '';
+          let yId = context.dataset.yAxisID || '';
+          let sc = context.chart.options.scales || null;
+          let yUnits = sc ? sc[yId].myUnits : " no units.";
+
+          if (label) {
+            label += ': ';
+          }
+		  // dbg // console.log(context); // dbg //
+          if (context.parsed.y !== null) {
+            label += context.parsed.y + yUnits; // dbg // label += ", yy:" + context.parsed.y + ", " + yId + yUnits;
+		  }
+          return label;
+      }}
+    }, // tooltip      
+    zoom: {
+       limits: {
+         x: { minRange: MIN_SAMPLE },  /* min: 'original', max: 'original', */ 
+       },
+       zoom: {
+          drag: {
+            enabled: true,
+            backgroundColor: 'rgba(40, 40, 240, 0.2)' 
+          },
+          mode: 'x',
+        }
+      }
+  } // plugins
+} // optionsMain
+
+const optionsOverview = {
+  maintainAspectRatio: false,
+  // responsive: false, 
+  scales: {
+    x: {
+      type: "time",
+      time: { tooltipFormat: cfgOptionsTimeFormatTooltip },
+      // time: { unit: "hour" }, // auto selected 
+      ticks: { display: false } // DBG: true
+    },
+    y: {
+      display: false,
+      beginAtZero: true,
+      ticks: { display: false } 
+    } 
+    // yAxes are added by data...
+  },
+  plugins: {
+    autocolors: { enabled: !cfgIsUseOriginalColors },
+    legend: { display: false },
+    // tooltip: { enabled: false },  // DBG: ??
+    zoom: {
+        zoom: {
+          drag: {
+            enabled: true,
+            backgroundColor: 'rgba(40, 40, 240, 0.2)', 
+            threshold: 801, // minimal zoom distance required before actually applying zoom // https://www.chartjs.org/chartjs-plugin-zoom/latest/guide/options.html#drag-options
+          },
+          mode: 'x',
+        }
+      }
+  } // plugins
+}; // optionsOverview
+
+const configMain = {
+  type: cfgChartMainType,
+  data: {
+    labels: [],
+    datasets: []
+  },
+  options: optionsMain,
+  plugins: [drawPrbVal0]
+};
+
+const configOverview = {
+  type: cfgChartOverviewType,
+  data: {
+    labels: [],
+    datasets: []
+  },
+  options: optionsOverview,
+  plugins: [drawSelectedRange]
+};
+
+if (cfgIsInitWithoutAdditionalData) {
+  fInit(); // fReadChartsData();
+}
+
+
+  // - - - - - - - - - - - - - - - - - - - 
+  //    Events:
+  // - - - - - - - - - - - - - - - - - - - 
+
+
+myChartOverview.canvas.addEventListener('pointerdown', event => {
+  // based on https://stackoverflow.com/questions/73777419/prevent-zoom-after-drag
+  // dbg // console.log("pointerdown"); // dbg // 
+  if ((event.offsetX >= myChartOverview.chartArea.left) && (event.offsetX <= myChartOverview.chartArea.right)) {     
+    selectedX0 = myChartOverview.scales.x.getValueForPixel(event.offsetX);
+  } else if (event.offsetX < myChartOverview.chartArea.left) {
+     selectedX0 = myChartOverview.scales.x.getValueForPixel(myChartOverview.chartArea.left);
+  } else if (event.offsetX > myChartOverview.chartArea.right) {     
+      selectedX0 = myChartOverview.scales.x.getValueForPixel(myChartOverview.chartArea.right);
+  } else {
+    // dbg // console.log("pointerdown ? " + event.offsetX + " |" + myChartOverview.chartArea.left + ".." + myChartOverview.chartArea.right); // dbg // 
+  }
+});
+myChartOverview.canvas.addEventListener('pointerup', event => {
+  // dbg // console.log("pointerup"); // dbg // 
+  if ((event.offsetX >= myChartOverview.chartArea.left) && (event.offsetX <= myChartOverview.chartArea.right)) {     
+    selectedXN = myChartOverview.scales.x.getValueForPixel(event.offsetX);
+  } else if (event.offsetX < myChartOverview.chartArea.left) {
+     selectedXN = myChartOverview.scales.x.getValueForPixel(myChartOverview.chartArea.left);
+  } else if (event.offsetX > myChartOverview.chartArea.right) {     
+     selectedXN = myChartOverview.scales.x.getValueForPixel(myChartOverview.chartArea.right);
+  } else {
+    // dbg // console.log("pointerup ? " + event.offsetX); // dbg // 
+  }
+	fUpdateMainBySelectedXs();       
+});
+
+
+function fUpdateMainBySelectedXs() {
+  // consider selection max to min, instead of selection min to max:
+  var xMin = Math.floor(Math.min(selectedX0, selectedXN));
+  var xMax = Math.ceil(Math.max(selectedX0, selectedXN));
+    // console.log(selectedX0 + " .. " + selectedXN); // dbg //
+    // console.log(xMin + " .. " + xMax); // dbg //
+  selectedDate0 = new Date(xMin);
+  selectedDateN = new Date(xMax);
+  fUpdateMainBySelectedDates(selectedDate0, selectedDateN);
+  fSetPickerByChart();
+}
+
+
+function fUpdateMainBySelectedDates(date0, dateN) {
+  // 1 csv file:
+  // var filteredDates = arrData_Utc.filter(d => ( (d >= date0) && (d <= dateN)));
+  // // dbg // console.log("fUpdateMainBySelectedDates() " + date0 + " .. " + dateN); // dbg //
+  // // console.log(filteredDates); // dbg // 
+	 //
+  // if (filteredDates.length < 1)
+  //   return;
+  // 
+  // myChart.config.data.labels = filteredDates;
+  //   
+  // const i0 = arrData_Utc.indexOf(filteredDates[0]); // == x start
+  // const iN = arrData_Utc.indexOf(filteredDates[filteredDates.length - 1]); // == x end
+  // // dbg // console.log("i0..iN " + i0 + ".." + iN); // dbg // 
+  
+  selectedDate0v = selectedDate0;
+  selectedDateNv = selectedDateN;
+	  
+  myChart.config.data.labels = [selectedDate0v, selectedDateNv]; // N csv files +? 1 csv file
+ 
+  // N csv files:
+  var filteredDates, i0, iN, keyPair; 
+  
+  
+    
+  var i_min, i_max, iStart = 0, iEnd = 1, data;
+  for(var i = 0; i < PROBES_NUM; i++) { 
+
+    // N csv files:
+  console.log("fUpdateMainBySelectedDates() i:" + i + ", " + date0 + " .. " + dateN); // dbg //
+  filteredDates = arrData_UtcPerProbe[i].filter(d => ( (d >= date0) && (d <= dateN)));
+  // dbg // console.log("fUpdateMainBySelectedDates() " + date0 + " .. " + dateN); // dbg //
+  // console.log(filteredDates); // dbg // 
+	
+  // ?? // if (filteredDates.length < 1)
+   // ?? //    return;
+
+
+    
+
+
+  // 1 csv file:
+  //  const arrProbesValCopy = [...arrData_Probes[i]]; 
+  //  arrProbesValCopy.splice(iN + 1, filteredDates.length); // remove the last items 
+  //  arrProbesValCopy.splice(0, i0);                        // remove the first items 
+  //
+  //  myChart.config.data.datasets[i].data = arrProbesValCopy;	
+
+  // N csv files:
+   data = [];
+  if (filteredDates.length > 0) {
+   i0 = arrData_UtcPerProbe[i].indexOf(filteredDates[0]); // == x start
+   iN = arrData_UtcPerProbe[i].indexOf(filteredDates[filteredDates.length - 1]); // == x end
+   // console.log("fUpdateMainBySelectedDates() i:" + i + ", " + i0 + " .. " + iN); // dbg //
+   
+        for(var j = i0; j <= iN; j++) {      // build current data array
+          // keyPair = [arrData_UtcPerProbe[i][j], arrData_Probes[i][j]];
+          keyPair = {x: arrData_UtcPerProbe[i][j], y: arrData_Probes[i][j]};
+          data.push(keyPair);
+          // console.log(keyPair); // dbg //
+        }
+    myChart.config.data.datasets[i].data = data;  // N csv files
+  } else {
+    myChart.config.data.datasets[i].data = [];  // N csv files
+  }
+    console.log(i + ". " + myChart.config.data.datasets[i].label); // dbg //
+    console.log(data); // dbg //
+
+    if (cfgIsShowMinMax) {
+      i_min = i + PROBES_NUM;	
+      i_max = i + PROBES_NUM + PROBES_NUM;
+
+      data = myChart.config.data.datasets[i_min].data;
+	  data[iStart]["x"] = filteredDates[0]; // todo: start of day
+	  data[iEnd]["x"] = filteredDates[filteredDates.length - 1]; 
+ 
+      data = myChart.config.data.datasets[i_max].data; 
+	  data[iStart]["x"] = filteredDates[0]; // todo: end of day 
+	  data[iEnd]["x"] = filteredDates[filteredDates.length - 1]; 
+    }
+  } // for
+
+
+    
+	myChart.resetZoom();
+    myChart.update();
+}
+
+
+function fSetPickerByChart() {	
+  // dbg // console.log("fSetPickerByChart()");
+
+  if (selectedDate0v && selectedDateNv) { //  if (lastSelectedRanges !== null) {
+    isSetChart = false;
+    rangeSetInnerSelectedRange(selectedDate0v, selectedDateNv, isSetChart);
+  }
+}
+
+
+function fSetChartsByPicker() {	// fSetChartByPicker
+  var rangeStart = $('#reportRange').data('daterangepicker').startDate; 
+  rangeStart = rangeStart.startOf('day');
+  // if (cfgDrpType == "byMonth") { rangeStart = rangeStart.startOf('month'); }
+
+  var rangeEnd = $('#reportRange').data('daterangepicker').endDate; 
+  rangeEnd = rangeEnd.endOf('day');
+  // if (cfgDrpType == "byMonth") { rangeEnd = rangeEnd.endOf('month'); }
+
+
+  // dbg // console.log("fSetChartsByPicker() " + rangeStart + " .. " + rangeEnd); // dbg //
+  selectedDate0 = new Date(rangeStart);
+  selectedDateN = new Date(rangeEnd);
+  fUpdateMainBySelectedDates(selectedDate0, selectedDateN);
+
+  myChartOverview.update(); 
+}
+
+
+  $("#btnResetZoom").click(function() {
+    myChart.resetZoom();
+    myChart.update();
+  })
+
+  $("#btnPrint").click(function() {
+    window.print();
+  })
+
+  $("#btnRefresh").click(function() {
+    window.location.reload();
+  })
+
+
+}); 
+
+</script>
+ 
+  </body>
+</html>
